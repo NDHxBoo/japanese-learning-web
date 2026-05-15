@@ -12,7 +12,7 @@
   // ⚠️ CẢNH BÁO BẢO MẬT: 
   // Nếu bạn dán API Key vào đây, bất kỳ ai vào web của bạn cũng có thể xem được Key này (bằng cách ấn F12).
   // Chỉ nên làm cách này nếu web của bạn chỉ dùng cá nhân hoặc chia sẻ nội bộ.
-  const DEFAULT_API_KEY = ""; 
+  const DEFAULT_API_KEY = "AIzaSyD5ue6X-vQvT3lN61PdQbKUTeW-r_Cl26I";
 
   function readJson(key, fallback) {
     try {
