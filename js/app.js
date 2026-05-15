@@ -120,10 +120,27 @@
   }
 
   function refreshFilterOptions() {
+    const currentSubject = els.subjectFilter.value;
+    const currentUnit = els.unitFilter.value;
+    const currentSession = els.sessionFilter.value;
+
+    const sheetWords = state.words.filter(w => !state.activeSheet || w.sheet === state.activeSheet);
+    
+    const subjects = VocabularyService.uniqueValues(sheetWords, "subject");
+    fillSelect(els.subjectFilter, subjects, "Tất cả nguồn");
+    els.subjectFilter.value = subjects.includes(currentSubject) ? currentSubject : "";
+
+    const unitWords = sheetWords.filter(w => !els.subjectFilter.value || w.subject === els.subjectFilter.value);
+    const units = VocabularyService.uniqueValues(unitWords, "unit");
+    fillSelect(els.unitFilter, units, "Tất cả Unit");
+    els.unitFilter.value = units.includes(currentUnit) ? currentUnit : "";
+
+    const sessionWords = unitWords.filter(w => !els.unitFilter.value || w.unit === els.unitFilter.value);
+    const sessions = VocabularyService.uniqueValues(sessionWords, "session");
+    fillSelect(els.sessionFilter, sessions, "Tất cả Session");
+    els.sessionFilter.value = sessions.includes(currentSession) ? currentSession : "";
+
     fillSelect(els.sheetFilter, state.sheets.map((sheet) => sheet.name), "Tất cả sheet");
-    fillSelect(els.subjectFilter, VocabularyService.uniqueValues(state.words, "subject"), "Tất cả nguồn");
-    fillSelect(els.unitFilter, VocabularyService.uniqueValues(state.words, "unit"), "Tất cả Unit");
-    fillSelect(els.sessionFilter, VocabularyService.uniqueValues(state.words, "session"), "Tất cả Session");
     els.sheetFilter.value = state.activeSheet && state.sheets.some((sheet) => sheet.name === state.activeSheet) ? state.activeSheet : "";
   }
 
@@ -171,6 +188,8 @@
       const statusMatch = !status || statusFor(word.id) === status;
       return queryMatch && sheetMatch && subjectMatch && unitMatch && sessionMatch && statusMatch;
     });
+
+    refreshFilterOptions();
 
     if (resetPage) state.currentPage = 1;
     state.cardIndex = Math.min(state.cardIndex, Math.max(state.filtered.length - 1, 0));
