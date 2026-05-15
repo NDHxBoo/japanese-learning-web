@@ -11,94 +11,73 @@
     return /[\u3040-\u30ff]/.test(value);
   }
 
-  function scoreCandidate(item) {
-    let score = 0;
-    if (item.word) score += 2;
-    if (item.reading) score += 2;
-    if (item.meaning) score += 2;
-    if (hasJapanese(item.word)) score += 4;
-    if (hasKana(item.reading)) score += 4;
-    if (item.meaning && !hasJapanese(item.meaning)) score += 2;
-    if (item.no && /^\d+(\.\d+)?$/.test(item.no)) score += 1;
-    return score;
-  }
+  function profileColumns(rows) {
+    if (!rows.length) return [];
+    const maxCols = Math.max(...rows.map((r) => r.length));
+    const scores = [];
 
-  function objectFromPosition(row) {
-    const cells = row.map((cell) => VocabularyService.normalizeText(cell));
-    if (meaningfulCells(row).length < 2) return null;
+    for (let c = 0; c < maxCols; c += 1) {
+      let kanaCount = 0;
+      let kanjiCount = 0;
+      let vietnameseCount = 0;
+      let numberCount = 0;
 
-    const candidates = [];
+      for (let r = 0; r < rows.length; r += 1) {
+        const cell = VocabularyService.normalizeText(rows[r][c]);
+        if (!cell) continue;
 
-    if (cells.length >= 7) {
-      candidates.push({
-        no: cells[0],
-        subject: cells[1],
-        unit: cells[2],
-        session: cells[3],
-        word: cells[4],
-        reading: cells[5],
-        meaning: cells[6],
-        example: cells[7],
-        note: cells[8]
-      });
+        const hasJp = hasJapanese(cell);
+        const hasKan = hasKana(cell);
+        const hasKanj = /[\u3400-\u9fff]/.test(cell);
+
+        if (/^\d+(\.\d+)?$/.test(cell)) {
+          numberCount += 1;
+        } else if (hasKanj) {
+          kanjiCount += 1;
+        } else if (hasKan && !hasKanj) {
+          kanaCount += 1;
+        } else if (!hasJp) {
+          vietnameseCount += 1;
+        }
+      }
+
+      scores.push({ index: c, kanaCount, kanjiCount, vietnameseCount, numberCount });
     }
 
-    if (cells.length >= 6) {
-      candidates.push({
-        no: cells[0],
-        subject: cells[1],
-        unit: cells[2],
-        word: cells[3],
-        reading: cells[4],
-        meaning: cells[5],
-        example: cells[6],
-        note: cells[7]
-      });
+    let wordCol = -1, readingCol = -1, meaningCol = -1, noCol = -1, exampleCol = -1, noteCol = -1;
+
+    const sortedByVi = [...scores].sort((a, b) => b.vietnameseCount - a.vietnameseCount);
+    if (sortedByVi[0] && sortedByVi[0].vietnameseCount > 0) meaningCol = sortedByVi[0].index;
+
+    const availableForJp = scores.filter((c) => c.index !== meaningCol);
+    const sortedByKanji = [...availableForJp].sort((a, b) => b.kanjiCount - a.kanjiCount);
+    if (sortedByKanji[0] && sortedByKanji[0].kanjiCount > 0) {
+      wordCol = sortedByKanji[0].index;
+    } else {
+      const sortedByKanaForWord = [...availableForJp].sort((a, b) => b.kanaCount - a.kanaCount);
+      if (sortedByKanaForWord[0] && sortedByKanaForWord[0].kanaCount > 0) wordCol = sortedByKanaForWord[0].index;
     }
 
-    if (cells.length >= 5) {
-      candidates.push({
-        no: cells[0],
-        unit: cells[1],
-        word: cells[2],
-        reading: cells[3],
-        meaning: cells[4],
-        example: cells[5],
-        note: cells[6]
-      });
-      candidates.push({
-        word: cells[0],
-        reading: cells[1],
-        meaning: cells[2],
-        example: cells[3],
-        note: cells[4]
-      });
-    }
+    const availableForReading = scores.filter((c) => c.index !== meaningCol && c.index !== wordCol);
+    const sortedByKana = [...availableForReading].sort((a, b) => b.kanaCount - a.kanaCount);
+    if (sortedByKana[0] && sortedByKana[0].kanaCount > 0) readingCol = sortedByKana[0].index;
 
-    if (cells.length >= 4) {
-      candidates.push({
-        no: cells[0],
-        word: cells[1],
-        reading: cells[2],
-        meaning: cells[3],
-        example: cells[4],
-        note: cells[5]
-      });
-      candidates.push({
-        word: cells[0],
-        reading: cells[1],
-        meaning: cells[2],
-        example: cells[3]
-      });
-    }
+    const availableForNo = scores.filter((c) => c.index !== meaningCol && c.index !== wordCol && c.index !== readingCol);
+    const sortedByNo = [...availableForNo].sort((a, b) => b.numberCount - a.numberCount);
+    if (sortedByNo[0] && sortedByNo[0].numberCount > 0) noCol = sortedByNo[0].index;
 
-    candidates.push({
-      word: cells[0],
-      reading: cells[1],
-      meaning: cells[2]
-    });
+    const unassigned = scores.filter((c) => ![wordCol, readingCol, meaningCol, noCol].includes(c.index) && c.vietnameseCount > 0).sort((a, b) => a.index - b.index);
+    if (unassigned[0]) exampleCol = unassigned[0].index;
+    if (unassigned[1]) noteCol = unassigned[1].index;
 
-    return candidates.sort((a, b) => scoreCandidate(b) - scoreCandidate(a))[0];
+    return rows.map((row) => ({
+      no: noCol !== -1 ? row[noCol] : "",
+      word: wordCol !== -1 ? row[wordCol] : "",
+      reading: readingCol !== -1 ? row[readingCol] : "",
+      meaning: meaningCol !== -1 ? row[meaningCol] : "",
+      example: exampleCol !== -1 ? row[exampleCol] : "",
+      note: noteCol !== -1 ? row[noteCol] : ""
+    }));
   }
 
   function rowsFromWorksheet(sheet) {
@@ -106,7 +85,7 @@
     const rows = matrix.filter((row) => meaningfulCells(row).length);
     const headerIndex = rows.findIndex((row) => row.some((cell) => VocabularyService.keyForHeader(cell)));
     if (headerIndex === -1) {
-      return rows.map(objectFromPosition).filter(Boolean);
+      return profileColumns(rows);
     }
 
     const headers = rows[headerIndex].map((cell, index) => VocabularyService.keyForHeader(cell) || `extra_${index}`);
