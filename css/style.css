@@ -841,3 +841,85 @@ tbody tr:hover {
     grid-template-columns: 1fr;
   }
 }
+
+/* AI Quiz Modal */
+.ai-quiz-modal {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+  backdrop-filter: blur(4px);
+}
+.ai-quiz-modal.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+.ai-quiz-content {
+  background: var(--surface);
+  width: 90%;
+  max-width: 600px;
+  border-radius: 24px;
+  padding: 30px;
+  position: relative;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  color: var(--navy);
+}
+.ai-quiz-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: none;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  color: #8da4c0;
+  line-height: 1;
+}
+.ai-quiz-close:hover {
+  color: var(--navy);
+}
+.ai-quiz-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 24px 0;
+}
+.option-button {
+  background: #f0f4f8;
+  border: 2px solid transparent;
+  padding: 16px;
+  border-radius: 12px;
+  text-align: left;
+  font-size: 16px;
+  font-family: inherit;
+  font-weight: 600;
+  color: var(--navy);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.option-button:hover {
+  background: #e1e9f0;
+}
+.option-button.correct {
+  background: #e6f6ee;
+  border-color: var(--success);
+}
+.option-button.wrong {
+  background: #fbeae9;
+  border-color: var(--error);
+}
+.ai-quiz-ready {
+  text-align: center;
+  padding: 30px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 16px;
+}
+.ai-quiz-ready h3 {
+  margin-top: 0;
+}

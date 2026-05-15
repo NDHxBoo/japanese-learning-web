@@ -25,7 +25,7 @@
       explain: "Giải thích các từ quan trọng: nghĩa, cách dùng, sắc thái, lỗi dễ nhầm và ví dụ tiếng Nhật kèm nghĩa.",
       examples: "Tạo ví dụ tiếng Nhật tự nhiên cho các từ vựng, kèm cách đọc nếu cần và dịch tiếng Việt.",
       mnemonic: "Tạo mẹo nhớ ngắn gọn, dễ nhớ cho người Việt, không bịa sai nghĩa.",
-      quiz: "Tạo quiz trắc nghiệm 10 câu, mỗi câu 4 đáp án, có đáp án đúng và giải thích ngắn.",
+      quiz: "Tạo quiz trắc nghiệm 10 câu. BẮT BUỘC chỉ trả về 1 mảng JSON chuẩn (không markdown, không text dư thừa) với cấu trúc sau:\n[\n  {\n    \"question\": \"Câu hỏi\",\n    \"options\": [\"Đáp án A\", \"Đáp án B\", \"Đáp án C\", \"Đáp án D\"],\n    \"correctIndex\": 0,\n    \"explanation\": \"Giải thích vì sao đúng\"\n  }\n]",
       grammar: "Phân tích ngữ pháp hoặc cấu trúc xuất hiện trong ví dụ/từ vựng, giải thích dễ hiểu cho người Việt.",
       reviewPlan: "Tạo kế hoạch ôn tập 7 ngày dựa trên danh sách từ vựng, chia theo mức độ ưu tiên."
     };
@@ -92,7 +92,25 @@
       throw new Error(data.error?.message || `Gemini request thất bại với mã ${response.status}.`);
     }
 
-    return resultText(data);
+    let result = resultText(data);
+    
+    if (mode === "quiz") {
+      try {
+        let jsonStr = result;
+        if (jsonStr.includes("```json")) {
+           jsonStr = jsonStr.split("```json")[1].split("```")[0];
+        } else if (jsonStr.includes("```")) {
+           jsonStr = jsonStr.split("```")[1].split("```")[0];
+        }
+        jsonStr = jsonStr.trim();
+        const parsed = JSON.parse(jsonStr);
+        return { isQuiz: true, data: parsed };
+      } catch (error) {
+        return { isQuiz: false, text: "Không thể nhận diện định dạng Quiz từ AI. Kết quả thô:\n" + result };
+      }
+    }
+
+    return { isQuiz: false, text: result };
   }
 
   window.AiService = {

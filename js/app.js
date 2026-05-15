@@ -329,15 +329,29 @@
     setAiLoading(true);
 
     try {
-      const text = await AiService.runGemini({
+      const response = await AiService.runGemini({
         apiKey,
         model,
         mode: els.aiMode.value,
         customPrompt: els.aiPrompt.value,
         words: state.filtered
       });
-      els.aiOutput.textContent = text;
+      
       els.aiResultState.textContent = "Đã có kết quả";
+      
+      if (response.isQuiz) {
+        els.aiOutput.innerHTML = `<div class="ai-quiz-ready">
+          <h3>Đã tạo xong Quiz trắc nghiệm!</h3>
+          <p style="margin-bottom:20px; color:var(--navy-light);">AI đã tạo thành công ${response.data.length} câu hỏi trắc nghiệm.</p>
+          <button id="startAiQuizBtn" class="button" style="background:var(--success); border-color:var(--success-dark);">Làm bài Quiz ngay</button>
+        </div>`;
+        
+        document.getElementById("startAiQuizBtn").addEventListener("click", () => {
+          AiQuizPlayer.start(response.data);
+        });
+      } else {
+        els.aiOutput.textContent = response.text;
+      }
     } catch (error) {
       els.aiOutput.textContent = "";
       els.aiMessage.textContent = error.message || "Gemini request thất bại.";
@@ -513,6 +527,7 @@
 
   els.aiApiKey.value = aiSettings.apiKey || "";
   els.aiModel.value = aiSettings.model || "gemini-2.5-flash";
+  AiQuizPlayer.init();
   refreshFilterOptions();
   restoreControls();
   applyFilters(false);
