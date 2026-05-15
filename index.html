@@ -66,6 +66,9 @@
           <label for="unitFilter">Unit</label>
           <select id="unitFilter"></select>
 
+          <label for="sessionFilter">Session</label>
+          <select id="sessionFilter"></select>
+
           <label for="statusFilter">Trạng thái</label>
           <select id="statusFilter">
             <option value="">Tất cả</option>
@@ -237,6 +240,19 @@
           <div class="unit-progress">
             <h3>Theo Sheet / Unit</h3>
             <div id="unitProgressList"></div>
+          </div>
+
+          <div class="backup-section" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--line);">
+            <h3>Sao lưu & Khôi phục</h3>
+            <p class="message" style="margin-bottom: 16px;">Tải xuống file tiến độ để không bị mất dữ liệu khi đổi trình duyệt hoặc tắt máy.</p>
+            <div class="button-row">
+              <button id="exportDataBtn" class="button" type="button">Tải xuống Backup (.json)</button>
+              <label class="button secondary" for="importDataFile" style="margin: 0; cursor: pointer; text-align: center;">
+                <input id="importDataFile" type="file" accept=".json" style="display: none;" />
+                Khôi phục từ file
+              </label>
+            </div>
+            <p id="backupMessage" class="message" role="status" style="margin-top: 10px;"></p>
           </div>
         </section>
 

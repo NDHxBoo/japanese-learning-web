@@ -13,6 +13,7 @@
     searchInput: document.querySelector("#searchInput"),
     subjectFilter: document.querySelector("#subjectFilter"),
     unitFilter: document.querySelector("#unitFilter"),
+    sessionFilter: document.querySelector("#sessionFilter"),
     statusFilter: document.querySelector("#statusFilter"),
     resetFiltersBtn: document.querySelector("#resetFiltersBtn"),
     shuffleBtn: document.querySelector("#shuffleBtn"),
@@ -53,6 +54,9 @@
     progressLearningBar: document.querySelector("#progressLearningBar"),
     progressQuizBar: document.querySelector("#progressQuizBar"),
     unitProgressList: document.querySelector("#unitProgressList"),
+    exportDataBtn: document.querySelector("#exportDataBtn"),
+    importDataFile: document.querySelector("#importDataFile"),
+    backupMessage: document.querySelector("#backupMessage"),
     aiApiKey: document.querySelector("#aiApiKey"),
     aiModel: document.querySelector("#aiModel"),
     aiMode: document.querySelector("#aiMode"),
@@ -105,6 +109,7 @@
       sheet: els.sheetFilter.value,
       subject: els.subjectFilter.value,
       unit: els.unitFilter.value,
+      session: els.sessionFilter.value,
       status: els.statusFilter.value,
       pageSize: state.pageSize
     };
@@ -118,6 +123,7 @@
     fillSelect(els.sheetFilter, state.sheets.map((sheet) => sheet.name), "Tất cả sheet");
     fillSelect(els.subjectFilter, VocabularyService.uniqueValues(state.words, "subject"), "Tất cả nguồn");
     fillSelect(els.unitFilter, VocabularyService.uniqueValues(state.words, "unit"), "Tất cả Unit");
+    fillSelect(els.sessionFilter, VocabularyService.uniqueValues(state.words, "session"), "Tất cả Session");
     els.sheetFilter.value = state.activeSheet && state.sheets.some((sheet) => sheet.name === state.activeSheet) ? state.activeSheet : "";
   }
 
@@ -127,6 +133,7 @@
     els.pageSizeSelect.value = String(state.pageSize);
     if (savedFilters.subject) els.subjectFilter.value = savedFilters.subject;
     if (savedFilters.unit) els.unitFilter.value = savedFilters.unit;
+    if (savedFilters.session) els.sessionFilter.value = savedFilters.session;
     if (savedFilters.sheet) els.sheetFilter.value = savedFilters.sheet;
   }
 
@@ -151,6 +158,7 @@
     state.activeSheet = els.sheetFilter.value;
     const subject = els.subjectFilter.value;
     const unit = els.unitFilter.value;
+    const session = els.sessionFilter.value;
     const status = els.statusFilter.value;
 
     state.filtered = state.words.filter((word) => {
@@ -159,8 +167,9 @@
       const sheetMatch = !state.activeSheet || word.sheet === state.activeSheet;
       const subjectMatch = !subject || word.subject === subject;
       const unitMatch = !unit || word.unit === unit;
+      const sessionMatch = !session || word.session === session;
       const statusMatch = !status || statusFor(word.id) === status;
-      return queryMatch && sheetMatch && subjectMatch && unitMatch && statusMatch;
+      return queryMatch && sheetMatch && subjectMatch && unitMatch && sessionMatch && statusMatch;
     });
 
     if (resetPage) state.currentPage = 1;
@@ -326,7 +335,7 @@
     button.addEventListener("click", () => showSection(button.dataset.section));
   });
 
-  [els.searchInput, els.sheetFilter, els.subjectFilter, els.unitFilter, els.statusFilter].forEach((control) => {
+  [els.searchInput, els.sheetFilter, els.subjectFilter, els.unitFilter, els.sessionFilter, els.statusFilter].forEach((control) => {
     control.addEventListener("input", () => applyFilters(true));
   });
 
@@ -350,6 +359,7 @@
     els.sheetFilter.value = "";
     els.subjectFilter.value = "";
     els.unitFilter.value = "";
+    els.sessionFilter.value = "";
     els.statusFilter.value = "";
     applyFilters(true);
   });
@@ -420,6 +430,46 @@
     state.quizStats = { correct: 0, total: 0, lastScore: 0, lastTotal: 0 };
     state.quizSession = { correct: 0, total: 0, answered: 0 };
     render();
+  });
+
+  els.exportDataBtn.addEventListener("click", () => {
+    const data = {
+      importedWorkbook: StorageService.loadImportedWorkbook(),
+      useImported: StorageService.shouldUseImported(),
+      progress: StorageService.loadProgress(),
+      quizStats: StorageService.loadQuizStats(),
+      filters: StorageService.loadFilters()
+    };
+    const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `japanese-learning-backup-${new Date().toISOString().split("T")[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    els.backupMessage.textContent = "Đã tải xuống file sao lưu. Hãy cất giữ cẩn thận.";
+  });
+
+  els.importDataFile.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = JSON.parse(event.target.result);
+        if (data.importedWorkbook) StorageService.saveImportedWorkbook(data.importedWorkbook);
+        if (data.progress) StorageService.saveProgress(data.progress);
+        if (data.quizStats) StorageService.saveQuizStats(data.quizStats);
+        if (data.filters) StorageService.saveFilters(data.filters);
+        
+        els.backupMessage.textContent = "Đã khôi phục thành công. Đang tải lại trang...";
+        setTimeout(() => location.reload(), 1000);
+      } catch (err) {
+        els.backupMessage.textContent = "File backup không hợp lệ hoặc bị lỗi.";
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
   });
 
   els.saveAiSettingsBtn.addEventListener("click", () => {

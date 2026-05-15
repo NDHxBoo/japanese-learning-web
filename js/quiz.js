@@ -16,6 +16,13 @@
 
     function makeQuestion() {
       const state = getState();
+      
+      if (state.quizSession.total >= 10) {
+        state.quizQuestion = null;
+        render();
+        return;
+      }
+
       const pool = eligibleWords();
       if (pool.length < 4) {
         state.quizQuestion = null;
@@ -77,6 +84,18 @@
       }
 
       if (!question) {
+        if (state.quizSession.total >= 10) {
+          elements.quizSummary.textContent = "Bạn đã hoàn thành bài quiz 10 câu.";
+          elements.quizWord.textContent = "Hoàn thành!";
+          elements.quizReading.textContent = `Điểm của bạn: ${state.quizSession.correct} / 10`;
+          elements.quizOptions.innerHTML = `<button id="playAgainBtn" class="button success" type="button" style="grid-column: 1 / -1; min-height: 56px;">Chơi lại ngay</button>`;
+          elements.quizFeedback.textContent = "Tiến độ của bạn đã được tự động lưu lại.";
+          
+          const playAgainBtn = document.getElementById("playAgainBtn");
+          if (playAgainBtn) playAgainBtn.addEventListener("click", resetQuiz);
+          return;
+        }
+
         elements.quizSummary.textContent = "Bấm Tạo quiz mới để bắt đầu.";
         elements.quizWord.textContent = "---";
         elements.quizReading.textContent = "";

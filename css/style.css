@@ -362,6 +362,12 @@ textarea:focus {
 .stat-card {
   padding: 16px;
   border-top: 4px solid var(--sakura);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover, .progress-card:hover, .unit-progress:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-soft);
 }
 
 .stat-card span {
@@ -380,10 +386,20 @@ textarea:focus {
 .view-section {
   display: none;
   min-width: 0;
+  opacity: 0;
+  transform: translateY(10px);
 }
 
 .view-section.active {
   display: block;
+  animation: fadeSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeSlideUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .table-wrapper {
@@ -486,17 +502,32 @@ tbody tr:hover {
   color: var(--text);
   text-align: center;
   box-shadow: var(--shadow);
-  transition: opacity 0.18s ease, transform 0.18s ease;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease, box-shadow 0.3s ease;
+  transform-style: preserve-3d;
 }
 
 .flashcard.flipped {
+  transform: rotateY(180deg);
   background:
     radial-gradient(circle at 86% 12%, rgba(18, 53, 91, 0.12), transparent 18rem),
     linear-gradient(135deg, #fff, #f4f8ff);
 }
 
+.flashcard > * {
+  transition: opacity 0.3s ease;
+}
+
+.flashcard.flipped > * {
+  transform: rotateY(180deg);
+}
+
 .flashcard:hover {
   transform: translateY(-2px);
+  box-shadow: 0 24px 54px rgba(232, 93, 117, 0.12);
+}
+
+.flashcard.flipped:hover {
+  transform: rotateY(180deg) translateY(-2px);
 }
 
 .card-label {
@@ -636,6 +667,7 @@ tbody tr:hover {
   height: 100%;
   border-radius: inherit;
   background: linear-gradient(90deg, var(--sakura), var(--navy));
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .unit-progress {
