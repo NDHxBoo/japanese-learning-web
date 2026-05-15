@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Japanese Vocabulary Learning</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="brand-block">
+        <span class="brand-mark">日</span>
+        <div>
+          <p class="eyebrow">Japanese Vocabulary Learning</p>
+          <h1>Học từ vựng tiếng Nhật</h1>
+          <p class="header-subtitle">Import Excel, học flashcard, luyện quiz và dùng Gemini AI để hỗ trợ ôn tập.</p>
+        </div>
+      </div>
+      <div class="header-status">
+        <span id="dataSourceLabel" class="source-pill">Chưa có dữ liệu</span>
+      </div>
+    </header>
+
+    <main class="app-layout">
+      <aside class="left-panel">
+        <section class="content-card">
+          <div class="card-heading">
+            <div>
+              <p class="eyebrow">Excel</p>
+              <h2>Import dữ liệu</h2>
+            </div>
+            <span class="mini-label">.xlsx / .xls</span>
+          </div>
+
+          <label class="file-drop" for="excelFile">
+            <input id="excelFile" type="file" accept=".xlsx,.xls" />
+            <strong>Chọn file Excel</strong>
+            <span>Hỗ trợ nhiều sheet và tự nhận diện cột từ vựng, cách đọc, nghĩa.</span>
+          </label>
+
+          <label for="sheetFilter">Sheet / bảng</label>
+          <select id="sheetFilter"></select>
+
+          <div class="button-row">
+            <button id="clearImportBtn" class="button secondary" type="button">Xóa dữ liệu</button>
+            <button id="clearProgressBtn" class="button danger" type="button">Xóa tiến độ</button>
+          </div>
+          <p id="importMessage" class="message" role="status"></p>
+        </section>
+
+        <section class="content-card">
+          <div class="card-heading">
+            <div>
+              <p class="eyebrow">Filter</p>
+              <h2>Bộ lọc</h2>
+            </div>
+          </div>
+
+          <label for="searchInput">Tìm kiếm</label>
+          <input id="searchInput" type="search" placeholder="Kanji, kana, nghĩa, ví dụ..." />
+
+          <label for="subjectFilter">Nguồn / môn</label>
+          <select id="subjectFilter"></select>
+
+          <label for="unitFilter">Unit</label>
+          <select id="unitFilter"></select>
+
+          <label for="statusFilter">Trạng thái</label>
+          <select id="statusFilter">
+            <option value="">Tất cả</option>
+            <option value="known">Đã thuộc</option>
+            <option value="learning">Chưa học</option>
+          </select>
+
+          <div class="button-row">
+            <button id="resetFiltersBtn" class="button secondary" type="button">Xóa lọc</button>
+            <button id="shuffleBtn" class="button" type="button">Trộn</button>
+          </div>
+        </section>
+
+        <section class="content-card">
+          <div class="card-heading">
+            <div>
+              <p class="eyebrow">Quick stats</p>
+              <h2>Thống kê nhanh</h2>
+            </div>
+          </div>
+          <div class="stats-grid">
+            <article class="stat-card">
+              <span id="totalWords">0</span>
+              <small>Từ vựng</small>
+            </article>
+            <article class="stat-card">
+              <span id="knownWords">0</span>
+              <small>Đã thuộc</small>
+            </article>
+            <article class="stat-card">
+              <span id="progressPercent">0%</span>
+              <small>Tiến độ</small>
+            </article>
+            <article class="stat-card">
+              <span id="quizAccuracy">0%</span>
+              <small>Quiz gần nhất</small>
+            </article>
+          </div>
+        </section>
+      </aside>
+
+      <section class="main-panel">
+        <nav class="tab-nav" aria-label="Chế độ học">
+          <button class="tab-button active" type="button" data-section="list-section">Danh sách</button>
+          <button class="tab-button" type="button" data-section="flashcard-section">Flashcard</button>
+          <button class="tab-button" type="button" data-section="quiz-section">Quiz</button>
+          <button class="tab-button" type="button" data-section="progress-section">Tiến độ</button>
+          <button class="tab-button ai-tab" type="button" data-section="ai-section">AI hỗ trợ</button>
+        </nav>
+
+        <section id="list-section" class="content-card view-section active">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Vocabulary</p>
+              <h2>Danh sách từ vựng</h2>
+              <span id="resultSummary">0 kết quả</span>
+            </div>
+            <div class="button-row">
+              <select id="pageSizeSelect" aria-label="Số dòng mỗi trang">
+                <option value="20">20 dòng</option>
+                <option value="50" selected>50 dòng</option>
+              </select>
+              <button id="markFilteredKnownBtn" class="button secondary" type="button">Đánh dấu đã thuộc</button>
+              <button id="markFilteredLearningBtn" class="button secondary" type="button">Bỏ đánh dấu</button>
+            </div>
+          </div>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>STT</th>
+                  <th>Từ vựng</th>
+                  <th>Cách đọc</th>
+                  <th>Nghĩa</th>
+                  <th>Ví dụ / Ghi chú</th>
+                  <th>Nguồn</th>
+                  <th>Unit</th>
+                  <th>Session</th>
+                  <th>Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody id="vocabularyTable"></tbody>
+            </table>
+          </div>
+
+          <div class="pagination">
+            <button id="prevPageBtn" class="button secondary" type="button">Trang trước</button>
+            <span id="pageInfo">Trang 0 / 0</span>
+            <button id="nextPageBtn" class="button secondary" type="button">Trang sau</button>
+          </div>
+        </section>
+
+        <section id="flashcard-section" class="content-card view-section">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Flashcard</p>
+              <h2>Học bằng thẻ</h2>
+              <span id="cardCounter">0 / 0</span>
+            </div>
+          </div>
+
+          <button id="flashcard" class="flashcard" type="button" aria-label="Lật flashcard">
+            <span class="card-label" id="cardSideLabel">Mặt trước</span>
+            <strong id="cardWord">---</strong>
+            <span id="cardReading"></span>
+            <span id="cardMeaning"></span>
+            <small id="cardMeta"></small>
+            <small id="cardExtra"></small>
+          </button>
+
+          <div class="button-row center">
+            <button id="prevCardBtn" class="button secondary" type="button">Trước</button>
+            <button id="flipCardBtn" class="button" type="button">Lật thẻ</button>
+            <button id="nextCardBtn" class="button secondary" type="button">Tiếp</button>
+            <button id="knownCardBtn" class="button success" type="button">Đã thuộc</button>
+            <button id="learningCardBtn" class="button secondary" type="button">Chưa thuộc</button>
+          </div>
+        </section>
+
+        <section id="quiz-section" class="content-card view-section">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Quiz</p>
+              <h2>Luyện trắc nghiệm</h2>
+              <span id="quizSummary">Cần ít nhất 4 từ để tạo quiz.</span>
+            </div>
+            <button id="newQuizBtn" class="button" type="button">Tạo quiz mới</button>
+          </div>
+
+          <article class="quiz-card">
+            <div class="quiz-score" id="quizScore">Điểm: 0 / 0</div>
+            <p class="card-label">Từ này nghĩa là gì?</p>
+            <h3 id="quizWord">---</h3>
+            <p id="quizReading"></p>
+            <div id="quizOptions" class="quiz-options"></div>
+            <p id="quizFeedback" class="feedback" aria-live="polite"></p>
+            <div class="button-row center">
+              <button id="nextQuestionBtn" class="button secondary" type="button">Câu tiếp theo</button>
+            </div>
+          </article>
+        </section>
+
+        <section id="progress-section" class="content-card view-section">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Progress</p>
+              <h2>Tiến độ học tập</h2>
+              <span>Dữ liệu được lưu bằng LocalStorage trên trình duyệt này.</span>
+            </div>
+          </div>
+          <div class="progress-grid">
+            <article class="progress-card">
+              <span>Đã thuộc</span>
+              <strong id="progressKnownCount">0</strong>
+              <div class="progress-bar"><span id="progressKnownBar"></span></div>
+            </article>
+            <article class="progress-card">
+              <span>Chưa học</span>
+              <strong id="progressLearningCount">0</strong>
+              <div class="progress-bar"><span id="progressLearningBar"></span></div>
+            </article>
+            <article class="progress-card">
+              <span>Quiz gần nhất</span>
+              <strong id="progressQuizStats">0 / 0</strong>
+              <div class="progress-bar"><span id="progressQuizBar"></span></div>
+            </article>
+          </div>
+          <div class="unit-progress">
+            <h3>Theo Sheet / Unit</h3>
+            <div id="unitProgressList"></div>
+          </div>
+        </section>
+
+        <section id="ai-section" class="content-card view-section">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Gemini AI</p>
+              <h2>AI hỗ trợ</h2>
+              <span>Dùng danh sách từ vựng đang lọc để giải thích, tạo ví dụ, quiz và kế hoạch ôn tập.</span>
+            </div>
+          </div>
+
+          <div class="ai-grid">
+            <section class="ai-form-card">
+              <label for="aiApiKey">Gemini API key</label>
+              <input id="aiApiKey" type="password" placeholder="YOUR_GEMINI_API_KEY" autocomplete="off" />
+
+              <label for="aiModel">Model</label>
+              <select id="aiModel">
+                <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+                <option value="gemini-2.5-pro">gemini-2.5-pro</option>
+                <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+              </select>
+
+              <label for="aiMode">Chế độ</label>
+              <select id="aiMode">
+                <option value="explain">Giải thích từ vựng</option>
+                <option value="examples">Tạo ví dụ</option>
+                <option value="mnemonic">Tạo mẹo nhớ</option>
+                <option value="quiz">Tạo quiz</option>
+                <option value="grammar">Phân tích ngữ pháp</option>
+                <option value="reviewPlan">Tạo kế hoạch ôn tập</option>
+              </select>
+
+              <label for="aiPrompt">Yêu cầu riêng</label>
+              <textarea id="aiPrompt" rows="7" placeholder="Ví dụ: Tập trung vào các từ trong Unit 1 và giải thích thật dễ hiểu."></textarea>
+
+              <div class="button-row">
+                <button id="runAiBtn" class="button" type="button">Chạy AI</button>
+                <button id="saveAiSettingsBtn" class="button secondary" type="button">Lưu cấu hình</button>
+              </div>
+              <p id="aiMessage" class="message" role="status"></p>
+            </section>
+
+            <section class="ai-result-card">
+              <div class="result-header">
+                <div>
+                  <h3>Kết quả AI</h3>
+                  <span id="aiResultState">Chưa có kết quả</span>
+                </div>
+                <button id="copyAiResultBtn" class="button secondary" type="button">Copy kết quả</button>
+              </div>
+              <div id="aiLoading" class="loading hidden" aria-hidden="true">
+                <span class="spinner"></span>
+                <span>Gemini đang xử lý...</span>
+              </div>
+              <pre id="aiOutput">Chưa có kết quả.</pre>
+            </section>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <template id="emptyStateTemplate">
+    <tr>
+      <td colspan="9" class="empty-state">Chưa có từ vựng. Vui lòng import file Excel trước khi học.</td>
+    </tr>
+  </template>
+
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/excel-import.js"></script>
+  <script src="js/vocabulary.js"></script>
+  <script src="js/flashcard.js"></script>
+  <script src="js/quiz.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
